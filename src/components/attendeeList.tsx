@@ -4,19 +4,35 @@ import Table from "./table/table"
 import TableHeader from "./table/tableHeader"
 import TableCells from "./table/tableCells"
 import TableRows from "./table/tableRows"
-import { ChangeEvent, useState } from "react"
-import { attendees } from "../data/attendee"
+import { ChangeEvent, useEffect, useState } from "react"
 import dayjs from "dayjs"
 import relativeTime from "dayjs/plugin/relativeTime"
 
 dayjs.extend(relativeTime)
 
+interface AttendeeProps {
+    id: string,
+    name: string,
+    email: string,
+    createdAt: string,
+    checkedInAt: string | null
+}
+
 export default function AttendeeList() {
     const [search, setSearch] = useState('')
     const [page, setPage] = useState(1)
+    const [attendees, setAttendees] = useState<AttendeeProps[]>([])
 
     const TotalPages = Math.ceil(attendees.length / 10)
 
+    useEffect(() => {
+        fetch("http://localhost:3333/events/9e9bd979-9d10-4915-b339-3786b1634f33/attendees")
+        .then(response => response.json())
+        .then(data => {
+            console.log(data)
+            setAttendees(data.attendees) 
+        })
+    },[page])
 
     function onSearchInputChanged(event: ChangeEvent<HTMLInputElement>) {
         event.preventDefault()
@@ -69,7 +85,7 @@ export default function AttendeeList() {
                     </tr>
                 </thead>
                 <tbody>
-                    {attendees.slice((page - 1) * 10,page * 10).map((attendee) => {
+                    {attendees.map((attendee) => {
                         return (
                             <TableRows key={attendee.id}>
                                 <TableCells>
@@ -83,7 +99,11 @@ export default function AttendeeList() {
                                     </div>
                                 </TableCells>
                                 <TableCells>{dayjs().to(attendee.createdAt)}</TableCells>
-                                <TableCells>{dayjs().to(attendee.checkedinAt)}</TableCells>
+                                <TableCells>
+                                    {attendee.checkedInAt === null 
+                                    ? <span className="text-zinc-400">Did not do check in</span> 
+                                    : dayjs().to(attendee.checkedInAt)}
+                                </TableCells>
                                 <TableCells>
                                     <IconButton transparent className="bg-black/20 border border-white/10 rounded-md p-1.5 hover:bg-black/5">
                                         <MoreHorizontal className="size-4" />
